@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Journal - 加密貨幣自動覆盤系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>body { background-color: #0b0f19; color: #f8fafc; }</style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-indigo-400"><i class="fa-solid fa-chart-line mr-2"></i>Crypto Journal</h1>
+                <p class="text-sm text-gray-400 mt-1">專為加密貨幣設計的動態覆盤系統</p>
+            </div>
+        </header>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>總交易筆數</div><div id="stat-total" class="text-2xl font-bold text-slate-200">0</div></div>
+            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>總勝率</div><div id="stat-winrate" class="text-2xl font-bold text-emerald-400">0%</div></div>
+            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>平均盈虧比</div><div id="stat-rr" class="text-2xl font-bold text-indigo-400">0.00</div></div>
+            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>累積總損益</div><div id="stat-profit" class="text-2xl font-bold text-slate-200">0.00 USDT</div></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit">
+                <form id="trade-form" class="space-y-4 text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-gray-400">交易對</label><input type="text" id="symbol" class="w-full bg-gray-800 rounded p-2 uppercase" required></div>
+                        <div><label class="text-gray-400">方向/槓桿</label><div class="flex gap-1"><select id="side" class="w-1/2 bg-gray-800 rounded p-2"><option value="Long">做多</option><option value="Short">做空</option></select><input type="number" id="leverage" class="w-1/2 bg-gray-800 rounded p-2" required></div></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div><label class="text-gray-400">進場點</label><input type="number" step="any" id="entry" class="w-full bg-gray-800 rounded p-2" required></div>
+                        <div><label class="text-gray-400">初始止盈</label><input type="number" step="any" id="tp" class="w-full bg-gray-800 rounded p-2"></div>
+                        <div><label class="text-gray-400">初始止損</label><input type="number" step="any" id="sl" class="w-full bg-gray-800 rounded p-2"></div>
+                    </div>
+                    <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 space-y-2">
+                        <div class="text-xs font-bold text-amber-500">動態調整紀錄</div>
+                        <input type="text" id="mod1" placeholder="第一次調整 (新TP/SL)" class="w-full bg-gray-800 rounded p-1.5 text-xs"><input type="text" id="reason1" placeholder="調整原因" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <input type="text" id="mod2" placeholder="第二次調整 (新TP/SL)" class="w-full bg-gray-800 rounded p-1.5 text-xs"><input type="text" id="reason2" placeholder="調整原因" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-gray-400">實際出場點</label><input type="number" step="any" id="exit" class="w-full bg-gray-800 rounded p-2"></div>
+                        <div><label class="text-gray-400">實際盈虧(USDT)</label><input type="number" step="any" id="pnl" class="w-full bg-gray-800 rounded p-2" required></div>
+                    </div>
+                    <div><label class="text-gray-400">開單理由</label><input type="text" id="reason" class="w-full bg-gray-800 rounded p-2" required></div>
+                    <div><label class="text-gray-400">TradingView 連結</label><input type="url" id="tvUrl" class="w-full bg-gray-800 rounded p-2 text-xs"></div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded cursor-pointer">儲存紀錄</button>
+                </form>
+            </div>
+            <div class="lg:col-span-2 space-y-4">
+                <h2 class="text-lg font-bold text-indigo-400 flex justify-between items-center border-b border-gray-800 pb-2"><span>歷史交易覆盤清單</span><button onclick="clearAllData()" class="text-xs text-rose-400 cursor-pointer">清空全部</button></h2>
+                <div id="trades-container" class="space-y-4 max-h-[750px] overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let trades = JSON.parse(localStorage.getItem('crypto_journal_trades')) || [];
+        document.getElementById('trade-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            trades.unshift({
+                id: Date.now(), symbol: document.getElementById('symbol').value.toUpperCase(), side: document.getElementById('side').value, leverage: document.getElementById('leverage').value,
+                entry: document.getElementById('entry').value, tp: document.getElementById('tp').value || '-', sl: document.getElementById('sl').value || '-',
+                mod1: document.getElementById('mod1').value, reason1: document.getElementById('reason1').value, mod2: document.getElementById('mod2').value, reason2: document.getElementById('reason2').value,
+                exit: document.getElementById('exit').value || '-', pnl: parseFloat(document.getElementById('pnl').value), reason: document.getElementById('reason').value, tvUrl: document.getElementById('tvUrl').value
+            });
+            saveAndRender(); e.target.reset();
+        });
+        function saveAndRender() { localStorage.setItem('crypto_journal_trades', JSON.stringify(trades)); renderStats(); renderTrades(); }
+        function deleteTrade(id) { if(confirm('確定刪除？')) { trades = trades.filter(t => t.id !== id); saveAndRender(); } }
+        function clearAllData() { if(confirm('確定清空？')) { trades = []; saveAndRender(); } }
+        function renderStats() {
+            const total = trades.length; document.getElementById('stat-total').innerText = total;
+            if (total === 0) { document.getElementById('stat-winrate').innerText = '0%'; document.getElementById('stat-rr').innerText = '0.00'; document.getElementById('stat-profit').innerText = '0.00 USDT'; return; }
+            const wins = trades.filter(t => t.pnl > 0).length; document.getElementById('stat-winrate').innerText = ((wins / total) * 100).toFixed(1) + '%';
+            const winTrades = trades.filter(t => t.pnl > 0); const loseTrades = trades.filter(t => t.pnl < 0);
+            const avgWin = winTrades.reduce((acc, t) => acc + t.pnl, 0) / (winTrades.length || 1);
+            const avgLose = Math.abs(trades.reduce((acc, t) => t.pnl < 0 ? acc + t.pnl : acc, 0) / (loseTrades.length || 1));
+            document.getElementById('stat-rr').innerText = avgLose === 0 ? avgWin.toFixed(2) : (avgWin / avgLose).toFixed(2);
+            const totalPnl = trades.reduce((acc, t) => acc + t.pnl, 0).toFixed(2);
+            document.getElementById('stat-profit').innerText = totalPnl + ' USDT';
+            document.getElementById('stat-profit').className = `text-2xl font-bold ${totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-500'}`;
+        }
+        function renderTrades() {
+            const container = document.getElementById('trades-container');
+            if (trades.length === 0) { container.innerHTML = '<div class="text-gray-500 py-4 text-sm">目前沒有紀錄</div>'; return; }
+            container.innerHTML = trades.map(t => `
+                <div class="bg-gray-900 p-4 rounded-xl border border-gray-800">
+                    <div class="flex justify-between items-start mb-2">
+                        <div><span class="font-bold">${t.symbol}</span> <span class="text-xs px-2 py-0.5 rounded ${t.side==='Long'?'bg-emerald-500/20 text-emerald-400':'bg-rose-500/20 text-rose-400'}">${t.side} ${t.leverage}x</span></div>
+                        <div class="flex items-center gap-2"><span class="font-bold ${t.pnl>=0?'text-emerald-400':'text-rose-500'}">${t.pnl} USDT</span><button onclick="deleteTrade(${t.id})" class="text-gray-500 text-xs">❌</button></div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 bg-gray-950 p-2 rounded text-xs mb-2">
+                        <div>進:${t.entry}</div><div>出:${t.exit}</div><div>止盈:${t.tp}</div><div>止損:${t.sl}</div>
+                    </div>
+                    ${(t.mod1||t.mod2)?`<div class="bg-gray-950 p-2 rounded text-xs text-amber-400 mb-2">${t.mod1?`<div>調整1:[${t.mod1}] 原因:${t.reason1}</div>`:''}${t.mod2?`<div>調整2:[${t.mod2}] 原因:${t.reason2}</div>`:''}</div>`:''}
+                    <div class="flex justify-between text-xs pt-2 border-t border-gray-800">
+                        <div>開單理由：${t.reason}</div>
+                        ${t.tvUrl?`<a href="${t.tvUrl}" target="_blank" class="text-indigo-400">查看 K 線截圖</a>`:'<span>無圖表</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+        saveAndRender();
+    </script>
+</body>
+</html>
