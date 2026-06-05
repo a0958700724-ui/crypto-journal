@@ -2,14 +2,17 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crypto Journal - 智能覆盤編輯版</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>body { background-color: #0b0f19; color: #f8fafc; }</style>
+    <style>
+        body { background-color: #0b0f19; color: #f8fafc; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+        html { overflow-y: auto !important; height: auto !important; }
+    </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-7xl mx-auto">
+<body class="p-4 md:p-8 min-h-screen">
+    <div class="max-w-7xl mx-auto pb-12">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-gray-800 pb-4 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極同步版</h1>
@@ -35,7 +38,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit sticky top-4">
+            <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit lg:sticky lg:top-4">
                 <div id="form-title" class="text-base font-bold text-indigo-400 mb-3 flex items-center"><i class="fa-solid fa-pen-to-square mr-2"></i><span>新增覆盤紀錄</span></div>
                 <form id="trade-form" class="space-y-4 text-sm">
                     <input type="hidden" id="edit-id">
@@ -83,7 +86,7 @@
                     <span>歷史交易覆盤清單</span>
                     <button onclick="clearAllData()" class="text-xs text-rose-400 cursor-pointer">清空本地</button>
                 </h2>
-                <div id="trades-container" class="space-y-4 max-h-[900px] overflow-y-auto"></div>
+                <div id="trades-container" class="space-y-4"></div>
             </div>
         </div>
     </div>
@@ -140,7 +143,6 @@
 
             if (isEditing && editId) {
                 tradeData.id = parseInt(editId);
-                // 更新本地陣列
                 const index = trades.findIndex(t => t.id === tradeData.id);
                 if(index !== -1) trades[index] = tradeData;
                 
@@ -209,7 +211,6 @@
             document.getElementById('submit-btn').className = "w-2/3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded cursor-pointer";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
             
-            // 畫面平滑滾動回頂部表單
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -226,7 +227,7 @@
 
         async function syncFromCloud() {
             const apiUrl = localStorage.getItem('crypto_sheet_api_url');
-            if(!apiUrl) { alert('請先填寫雲端同步網址！'); return; }
+            if(!apiUrl) return;
             const container = document.getElementById('trades-container');
             container.innerHTML = '<div class="text-amber-400 py-4 text-sm text-center"><i class="fa-solid fa-spinner animate-spin mr-2"></i>正在同步跨裝置雲端數據...</div>';
 
@@ -238,7 +239,6 @@
                     saveAndRender();
                 }
             } catch(err) {
-                alert('雲端同步失敗，請檢查 Google 部署權限設定！');
                 renderTrades();
             }
         }
@@ -250,7 +250,7 @@
         }
         
         function deleteTrade(id) { 
-            if(confirm('確定刪除？(注意：雲端試算表內的數據建議同步去雲端手動刪除喔)')) { 
+            if(confirm('確定刪除？(請記得同步至雲端試算表手動刪除該列喔)')) { 
                 trades = trades.filter(t => t.id !== id); 
                 saveAndRender(); 
             } 
@@ -283,8 +283,8 @@
                 if(!imgsHtml) imgsHtml = '<span class="text-gray-600">無圖表紀錄</span>';
 
                 return `
-                <div class="bg-gray-900 p-5 rounded-xl border border-gray-800 space-y-3">
-                    <div class="flex justify-between items-start">
+                <div class="bg-gray-900 p-5 rounded-xl border border-gray-800 space-y-3 text-sm">
+                    <div class="flex justify-between items-start flex-wrap gap-2">
                         <div>
                             <span class="text-lg font-bold text-white">${t.symbol}</span> 
                             <span class="text-xs px-2 py-0.5 ml-2 rounded font-bold ${t.side==='Long'?'bg-emerald-500/20 text-emerald-400':'bg-rose-500/20 text-rose-400'}">${t.side} ${t.leverage}x</span>
@@ -295,7 +295,7 @@
                             <button onclick="deleteTrade(${t.id})" class="text-gray-600 hover:text-rose-400 text-sm cursor-pointer ml-1">❌</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-4 gap-2 bg-gray-950 p-2.5 rounded text-xs text-gray-300">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-950 p-2.5 rounded text-xs text-gray-300">
                         <div>進場: <span class="text-white">${t.entry}</span></div>
                         <div>出場: <span class="text-white">${t.exit}</span></div>
                         <div>止盈: <span class="text-emerald-500">${t.tp}</span></div>
