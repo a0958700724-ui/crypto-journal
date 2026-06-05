@@ -3,25 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Journal - 加密貨幣自動覆盤系統</title>
+    <title>Crypto Journal - 多時框雲端覆盤版</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>body { background-color: #0b0f19; color: #f8fafc; }</style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
-        <header class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-gray-800 pb-4 gap-4">
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-indigo-400"><i class="fa-solid fa-chart-line mr-2"></i>Crypto Journal</h1>
-                <p class="text-sm text-gray-400 mt-1">專為加密貨幣設計的動態覆盤系統</p>
+                <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極同步版</h1>
+                <p class="text-sm text-gray-400">支援 4 時框圖片、詳細覆盤筆記、手機/電腦跨裝置同步</p>
+            </div>
+            <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 text-xs w-full sm:w-auto">
+                <div class="font-bold text-indigo-400 mb-1"><i class="fa-solid fa-gear mr-1"></i>雲端同步設定</div>
+                <div class="flex flex-col gap-1.5">
+                    <input type="url" id="sheet-api" placeholder="請貼上 Google Web App 網址" class="bg-gray-800 p-1.5 rounded text-gray-300 w-full sm:w-64 focus:outline-none focus:border-indigo-500">
+                    <div class="flex gap-2">
+                        <button onclick="saveApiUrl()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded cursor-pointer w-1/2 font-bold">儲存設定</button>
+                        <button onclick="syncFromCloud()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded cursor-pointer w-1/2 font-bold"><i class="fa-solid fa-rotate mr-1"></i>手動同步</button>
+                    </div>
+                </div>
             </div>
         </header>
+
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>總交易筆數</div><div id="stat-total" class="text-2xl font-bold text-slate-200">0</div></div>
             <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>總勝率</div><div id="stat-winrate" class="text-2xl font-bold text-emerald-400">0%</div></div>
             <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>平均盈虧比</div><div id="stat-rr" class="text-2xl font-bold text-indigo-400">0.00</div></div>
             <div class="bg-gray-900 p-4 rounded-xl border border-gray-800"><div>累積總損益</div><div id="stat-profit" class="text-2xl font-bold text-slate-200">0.00 USDT</div></div>
         </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit">
                 <form id="trade-form" class="space-y-4 text-sm">
@@ -43,32 +55,139 @@
                         <div><label class="text-gray-400">實際出場點</label><input type="number" step="any" id="exit" class="w-full bg-gray-800 rounded p-2"></div>
                         <div><label class="text-gray-400">實際盈虧(USDT)</label><input type="number" step="any" id="pnl" class="w-full bg-gray-800 rounded p-2" required></div>
                     </div>
-                    <div><label class="text-gray-400">開單理由</label><input type="text" id="reason" class="w-full bg-gray-800 rounded p-2" required></div>
-                    <div><label class="text-gray-400">TradingView 連結</label><input type="url" id="tvUrl" class="w-full bg-gray-800 rounded p-2 text-xs"></div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded cursor-pointer">儲存紀錄</button>
+                    <div><label class="text-gray-400">開單基本理由</label><input type="text" id="reason" class="w-full bg-gray-800 rounded p-2" placeholder="例如：日線級別支撐趨勢線破位" required></div>
+                    
+                    <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 space-y-2">
+                        <div class="text-xs font-bold text-indigo-400"><i class="fa-solid fa-images mr-1"></i>TradingView 多時框圖片連結</div>
+                        <input type="url" id="tvUrl1" placeholder="圖 1：大時框趨勢 (如 日線/4H)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <input type="url" id="tvUrl2" placeholder="圖 2：中時框結構 (如 1H)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <input type="url" id="tvUrl3" placeholder="圖 3：小時框進場點 (如 15M/5M)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <input type="url" id="tvUrl4" placeholder="圖 4：平倉/出場截圖 (選填)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                    </div>
+
+                    <div>
+                        <label class="text-gray-400 font-bold block mb-1 text-indigo-400"><i class="fa-solid fa-pen-to-square mr-1"></i>詳細覆盤心得與檢討</label>
+                        <textarea id="notes" rows="4" class="w-full bg-gray-800 rounded p-2 text-sm focus:outline-none focus:border-indigo-500" placeholder="打下你對這筆單的詳細覆盤筆記..."></textarea>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded cursor-pointer">儲存覆盤紀錄</button>
                 </form>
             </div>
             <div class="lg:col-span-2 space-y-4">
-                <h2 class="text-lg font-bold text-indigo-400 flex justify-between items-center border-b border-gray-800 pb-2"><span>歷史交易覆盤清單</span><button onclick="clearAllData()" class="text-xs text-rose-400 cursor-pointer">清空全部</button></h2>
-                <div id="trades-container" class="space-y-4 max-h-[750px] overflow-y-auto"></div>
+                <h2 class="text-lg font-bold text-indigo-400 flex justify-between items-center border-b border-gray-800 pb-2">
+                    <span>歷史交易覆盤清單</span>
+                    <button onclick="clearAllData()" class="text-xs text-rose-400 cursor-pointer">清空本地</button>
+                </h2>
+                <div id="trades-container" class="space-y-4 max-h-[900px] overflow-y-auto"></div>
             </div>
         </div>
     </div>
+
     <script>
         let trades = JSON.parse(localStorage.getItem('crypto_journal_trades')) || [];
-        document.getElementById('trade-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            trades.unshift({
-                id: Date.now(), symbol: document.getElementById('symbol').value.toUpperCase(), side: document.getElementById('side').value, leverage: document.getElementById('leverage').value,
-                entry: document.getElementById('entry').value, tp: document.getElementById('tp').value || '-', sl: document.getElementById('sl').value || '-',
-                mod1: document.getElementById('mod1').value, reason1: document.getElementById('reason1').value, mod2: document.getElementById('mod2').value, reason2: document.getElementById('reason2').value,
-                exit: document.getElementById('exit').value || '-', pnl: parseFloat(document.getElementById('pnl').value), reason: document.getElementById('reason').value, tvUrl: document.getElementById('tvUrl').value
-            });
-            saveAndRender(); e.target.reset();
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('crypto_sheet_api_url');
+            if(savedUrl) {
+                document.getElementById('sheet-api').value = savedUrl;
+                syncFromCloud();
+            }
+            renderStats();
+            renderTrades();
         });
-        function saveAndRender() { localStorage.setItem('crypto_journal_trades', JSON.stringify(trades)); renderStats(); renderTrades(); }
-        function deleteTrade(id) { if(confirm('確定刪除？')) { trades = trades.filter(t => t.id !== id); saveAndRender(); } }
-        function clearAllData() { if(confirm('確定清空？')) { trades = []; saveAndRender(); } }
+
+        function saveApiUrl() {
+            const url = document.getElementById('sheet-api').value.trim();
+            localStorage.setItem('crypto_sheet_api_url', url);
+            alert('雲端同步網址儲存成功！');
+            if(url) syncFromCloud();
+        }
+
+        document.getElementById('trade-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            
+            const newTrade = {
+                id: Date.now(), 
+                symbol: document.getElementById('symbol').value.toUpperCase(), 
+                side: document.getElementById('side').value, 
+                leverage: document.getElementById('leverage').value,
+                entry: document.getElementById('entry').value, 
+                tp: document.getElementById('tp').value || '-', 
+                sl: document.getElementById('sl').value || '-',
+                mod1: document.getElementById('mod1').value || '-', 
+                reason1: document.getElementById('reason1').value || '-', 
+                mod2: document.getElementById('mod2').value || '-', 
+                reason2: document.getElementById('reason2').value || '-',
+                exit: document.getElementById('exit').value || '-', 
+                pnl: parseFloat(document.getElementById('pnl').value), 
+                reason: document.getElementById('reason').value, 
+                tvUrl1: document.getElementById('tvUrl1').value || '-',
+                tvUrl2: document.getElementById('tvUrl2').value || '-',
+                tvUrl3: document.getElementById('tvUrl3').value || '-',
+                tvUrl4: document.getElementById('tvUrl4').value || '-',
+                notes: document.getElementById('notes').value || '-'
+            };
+
+            trades.unshift(newTrade);
+            saveAndRender();
+            e.target.reset();
+
+            const apiUrl = localStorage.getItem('crypto_sheet_api_url');
+            if(apiUrl) {
+                btn.innerText = '正在同步至雲端試算表...';
+                btn.disabled = true;
+                try {
+                    await fetch(apiUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'add', data: newTrade })
+                    });
+                    btn.innerText = '儲存覆盤紀錄';
+                    btn.disabled = false;
+                } catch(err) {
+                    console.error(err);
+                    btn.innerText = '儲存紀錄 (雲端同步失敗)';
+                    btn.disabled = false;
+                }
+            }
+        });
+
+        async function syncFromCloud() {
+            const apiUrl = localStorage.getItem('crypto_sheet_api_url');
+            if(!apiUrl) { alert('請先填寫雲端同步網址！'); return; }
+            const container = document.getElementById('trades-container');
+            container.innerHTML = '<div class="text-amber-400 py-4 text-sm text-center"><i class="fa-solid fa-spinner animate-spin mr-2"></i>正在同步跨裝置雲端數據...</div>';
+
+            try {
+                const res = await fetch(apiUrl + '?action=get');
+                const cloudData = await res.json();
+                if(Array.isArray(cloudData)) {
+                    trades = cloudData.reverse(); 
+                    saveAndRender();
+                }
+            } catch(err) {
+                alert('雲端同步失敗，請檢查 Google 部署權限設定！');
+                renderTrades();
+            }
+        }
+
+        function saveAndRender() { 
+            localStorage.setItem('crypto_journal_trades', JSON.stringify(trades)); 
+            renderStats(); 
+            renderTrades(); 
+        }
+        
+        function deleteTrade(id) { 
+            if(confirm('確定刪除？(注意：雲端試算表內的數據建議同步去雲端手動刪除喔)')) { 
+                trades = trades.filter(t => t.id !== id); 
+                saveAndRender(); 
+            } 
+        }
+        
+        function clearAllData() { if(confirm('確定清空本地紀錄？')) { trades = []; saveAndRender(); } }
+        
         function renderStats() {
             const total = trades.length; document.getElementById('stat-total').innerText = total;
             if (total === 0) { document.getElementById('stat-winrate').innerText = '0%'; document.getElementById('stat-rr').innerText = '0.00'; document.getElementById('stat-profit').innerText = '0.00 USDT'; return; }
@@ -81,27 +200,58 @@
             document.getElementById('stat-profit').innerText = totalPnl + ' USDT';
             document.getElementById('stat-profit').className = `text-2xl font-bold ${totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-500'}`;
         }
+
         function renderTrades() {
             const container = document.getElementById('trades-container');
-            if (trades.length === 0) { container.innerHTML = '<div class="text-gray-500 py-4 text-sm">目前沒有紀錄</div>'; return; }
-            container.innerHTML = trades.map(t => `
-                <div class="bg-gray-900 p-4 rounded-xl border border-gray-800">
-                    <div class="flex justify-between items-start mb-2">
-                        <div><span class="font-bold">${t.symbol}</span> <span class="text-xs px-2 py-0.5 rounded ${t.side==='Long'?'bg-emerald-500/20 text-emerald-400':'bg-rose-500/20 text-rose-400'}">${t.side} ${t.leverage}x</span></div>
-                        <div class="flex items-center gap-2"><span class="font-bold ${t.pnl>=0?'text-emerald-400':'text-rose-500'}">${t.pnl} USDT</span><button onclick="deleteTrade(${t.id})" class="text-gray-500 text-xs">❌</button></div>
+            if (trades.length === 0) { container.innerHTML = '<div class="text-gray-500 py-4 text-sm text-center">目前沒有覆盤紀錄</div>'; return; }
+            container.innerHTML = trades.map(t => {
+                let imgsHtml = '';
+                if(t.tvUrl1 && t.tvUrl1 !== '-') imgsHtml += `<a href="${t.tvUrl1}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖1(大時框)</a>`;
+                if(t.tvUrl2 && t.tvUrl2 !== '-') imgsHtml += `<a href="${t.tvUrl2}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖2(中時框)</a>`;
+                if(t.tvUrl3 && t.tvUrl3 !== '-') imgsHtml += `<a href="${t.tvUrl3}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖3(小時框)</a>`;
+                if(t.tvUrl4 && t.tvUrl4 !== '-') imgsHtml += `<a href="${t.tvUrl4}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖4(出場)</a>`;
+                if(!imgsHtml) imgsHtml = '<span class="text-gray-600">無圖表紀錄</span>';
+
+                return `
+                <div class="bg-gray-900 p-5 rounded-xl border border-gray-800 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-lg font-bold text-white">${t.symbol}</span> 
+                            <span class="text-xs px-2 py-0.5 ml-2 rounded font-bold ${t.side==='Long'?'bg-emerald-500/20 text-emerald-400':'bg-rose-500/20 text-rose-400'}">${t.side} ${t.leverage}x</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg font-bold ${t.pnl>=0?'text-emerald-400':'text-rose-500'}">${t.pnl >= 0 ? '+' : ''}${t.pnl} USDT</span>
+                            <button onclick="deleteTrade(${t.id})" class="text-gray-600 hover:text-rose-400 text-sm cursor-pointer">❌</button>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-4 gap-2 bg-gray-950 p-2 rounded text-xs mb-2">
-                        <div>進:${t.entry}</div><div>出:${t.exit}</div><div>止盈:${t.tp}</div><div>止損:${t.sl}</div>
+                    <div class="grid grid-cols-4 gap-2 bg-gray-950 p-2.5 rounded text-xs text-gray-300">
+                        <div>進場: <span class="text-white">${t.entry}</span></div>
+                        <div>出場: <span class="text-white">${t.exit}</span></div>
+                        <div>止盈: <span class="text-emerald-500">${t.tp}</span></div>
+                        <div>止損: <span class="text-rose-500">${t.sl}</span></div>
                     </div>
-                    ${(t.mod1||t.mod2)?`<div class="bg-gray-950 p-2 rounded text-xs text-amber-400 mb-2">${t.mod1?`<div>調整1:[${t.mod1}] 原因:${t.reason1}</div>`:''}${t.mod2?`<div>調整2:[${t.mod2}] 原因:${t.reason2}</div>`:''}</div>`:''}
-                    <div class="flex justify-between text-xs pt-2 border-t border-gray-800">
-                        <div>開單理由：${t.reason}</div>
-                        ${t.tvUrl?`<a href="${t.tvUrl}" target="_blank" class="text-indigo-400">查看 K 線截圖</a>`:'<span>無圖表</span>'}
+                    ${(t.mod1!=='-'||t.mod2!=='-')?`
+                    <div class="bg-gray-950/70 p-2.5 rounded text-xs text-amber-400 space-y-1 border border-amber-950/30">
+                        ${t.mod1!=='-'?`<div><i class="fa-solid fa-circle-exclamation mr-1"></i>調整1: [${t.mod1}] 原因: ${t.reason1}</div>`:''}
+                        ${t.mod2!=='-'?`<div><i class="fa-solid fa-circle-exclamation mr-1"></i>調整2: [${t.mod2}] 原因: ${t.reason2}</div>`:''}
+                    </div>`:''}
+                    <div class="text-xs text-gray-400">
+                        <span class="text-gray-500 font-bold">開單理由：</span>${t.reason}
+                    </div>
+                    <div class="pt-1">
+                        <div class="text-gray-500 font-bold text-xs mb-1.5">結構圖表 (多時框)：</div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                            ${imgsHtml}
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800/60 mt-2">
+                        <div class="text-indigo-400 font-bold text-xs mb-1 flex items-center"><i class="fa-solid fa-book-open mr-1"></i>個人覆盤心得筆記：</div>
+                        <div class="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">${t.notes !== '-' ? t.notes : '無詳細筆記'}</div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
-        saveAndRender();
     </script>
 </body>
 </html>
