@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Journal - 多時框雲端覆盤版</title>
+    <title>Crypto Journal - 智能覆盤編輯版</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>body { background-color: #0b0f19; color: #f8fafc; }</style>
@@ -13,7 +13,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-gray-800 pb-4 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極同步版</h1>
-                <p class="text-sm text-gray-400">支援 4 時框圖片、詳細覆盤筆記、手機/電腦跨裝置同步</p>
+                <p class="text-sm text-gray-400">支援 4 時框圖片、歷史紀錄隨時編輯更新、手機/電腦同步</p>
             </div>
             <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 text-xs w-full sm:w-auto">
                 <div class="font-bold text-indigo-400 mb-1"><i class="fa-solid fa-gear mr-1"></i>雲端同步設定</div>
@@ -35,8 +35,10 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit">
+            <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 h-fit sticky top-4">
+                <div id="form-title" class="text-base font-bold text-indigo-400 mb-3 flex items-center"><i class="fa-solid fa-pen-to-square mr-2"></i><span>新增覆盤紀錄</span></div>
                 <form id="trade-form" class="space-y-4 text-sm">
+                    <input type="hidden" id="edit-id">
                     <div class="grid grid-cols-2 gap-2">
                         <div><label class="text-gray-400">交易對</label><input type="text" id="symbol" class="w-full bg-gray-800 rounded p-2 uppercase" required></div>
                         <div><label class="text-gray-400">方向/槓桿</label><div class="flex gap-1"><select id="side" class="w-1/2 bg-gray-800 rounded p-2"><option value="Long">做多</option><option value="Short">做空</option></select><input type="number" id="leverage" class="w-1/2 bg-gray-800 rounded p-2" required></div></div>
@@ -70,7 +72,10 @@
                         <textarea id="notes" rows="4" class="w-full bg-gray-800 rounded p-2 text-sm focus:outline-none focus:border-indigo-500" placeholder="打下你對這筆單的詳細覆盤筆記..."></textarea>
                     </div>
 
-                    <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded cursor-pointer">儲存覆盤紀錄</button>
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-edit-btn" onclick="exitEditMode()" class="hidden w-1/3 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded cursor-pointer">取消</button>
+                        <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded cursor-pointer">儲存覆盤紀錄</button>
+                    </div>
                 </form>
             </div>
             <div class="lg:col-span-2 space-y-4">
@@ -85,6 +90,7 @@
 
     <script>
         let trades = JSON.parse(localStorage.getItem('crypto_journal_trades')) || [];
+        let isEditing = false;
         
         document.addEventListener('DOMContentLoaded', () => {
             const savedUrl = localStorage.getItem('crypto_sheet_api_url');
@@ -106,9 +112,9 @@
         document.getElementById('trade-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
+            const editId = document.getElementById('edit-id').value;
             
-            const newTrade = {
-                id: Date.now(), 
+            const tradeData = {
                 symbol: document.getElementById('symbol').value.toUpperCase(), 
                 side: document.getElementById('side').value, 
                 leverage: document.getElementById('leverage').value,
@@ -129,30 +135,94 @@
                 notes: document.getElementById('notes').value || '-'
             };
 
-            trades.unshift(newTrade);
-            saveAndRender();
-            e.target.reset();
-
             const apiUrl = localStorage.getItem('crypto_sheet_api_url');
-            if(apiUrl) {
-                btn.innerText = '正在同步至雲端試算表...';
-                btn.disabled = true;
-                try {
-                    await fetch(apiUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'add', data: newTrade })
-                    });
-                    btn.innerText = '儲存覆盤紀錄';
-                    btn.disabled = false;
-                } catch(err) {
-                    console.error(err);
-                    btn.innerText = '儲存紀錄 (雲端同步失敗)';
-                    btn.disabled = false;
+            btn.disabled = true;
+
+            if (isEditing && editId) {
+                tradeData.id = parseInt(editId);
+                // 更新本地陣列
+                const index = trades.findIndex(t => t.id === tradeData.id);
+                if(index !== -1) trades[index] = tradeData;
+                
+                if(apiUrl) {
+                    btn.innerText = '正在雲端更新此筆資料...';
+                    try {
+                        await fetch(apiUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'update', data: tradeData })
+                        });
+                    } catch(err) { console.error(err); }
+                }
+                exitEditMode();
+            } else {
+                tradeData.id = Date.now();
+                trades.unshift(tradeData);
+                if(apiUrl) {
+                    btn.innerText = '正在同步至雲端試算表...';
+                    try {
+                        await fetch(apiUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'add', data: tradeData })
+                        });
+                    } catch(err) { console.error(err); }
                 }
             }
+
+            btn.innerText = '儲存覆盤紀錄';
+            btn.disabled = false;
+            saveAndRender();
+            e.target.reset();
         });
+
+        function startEdit(id) {
+            isEditing = true;
+            const t = trades.find(item => item.id === id);
+            if (!t) return;
+
+            document.getElementById('edit-id').value = t.id;
+            document.getElementById('symbol').value = t.symbol;
+            document.getElementById('side').value = t.side;
+            document.getElementById('leverage').value = t.leverage;
+            document.getElementById('entry').value = t.entry;
+            document.getElementById('tp').value = t.tp === '-' ? '' : t.tp;
+            document.getElementById('sl').value = t.sl === '-' ? '' : t.sl;
+            document.getElementById('mod1').value = t.mod1 === '-' ? '' : t.mod1;
+            document.getElementById('reason1').value = t.reason1 === '-' ? '' : t.reason1;
+            document.getElementById('mod2').value = t.mod2 === '-' ? '' : t.mod2;
+            document.getElementById('reason2').value = t.reason2 === '-' ? '' : t.reason2;
+            document.getElementById('exit').value = t.exit === '-' ? '' : t.exit;
+            document.getElementById('pnl').value = t.pnl;
+            document.getElementById('reason').value = t.reason;
+            document.getElementById('tvUrl1').value = t.tvUrl1 === '-' ? '' : t.tvUrl1;
+            document.getElementById('tvUrl2').value = t.tvUrl2 === '-' ? '' : t.tvUrl2;
+            document.getElementById('tvUrl3').value = t.tvUrl3 === '-' ? '' : t.tvUrl3;
+            document.getElementById('tvUrl4').value = t.tvUrl4 === '-' ? '' : t.tvUrl4;
+            document.getElementById('notes').value = t.notes === '-' ? '' : t.notes;
+
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen mr-2"></i>修改交易覆盤中';
+            document.getElementById('form-title').className = "text-base font-bold text-amber-400 mb-3 flex items-center";
+            document.getElementById('submit-btn').innerText = '確認修改此單';
+            document.getElementById('submit-btn').className = "w-2/3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded cursor-pointer";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            
+            // 畫面平滑滾動回頂部表單
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function exitEditMode() {
+            isEditing = false;
+            document.getElementById('trade-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i><span>新增覆盤紀錄</span>';
+            document.getElementById('form-title').className = "text-base font-bold text-indigo-400 mb-3 flex items-center";
+            document.getElementById('submit-btn').innerText = '儲存覆盤紀錄';
+            document.getElementById('submit-btn').className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded cursor-pointer";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+        }
 
         async function syncFromCloud() {
             const apiUrl = localStorage.getItem('crypto_sheet_api_url');
@@ -206,10 +276,10 @@
             if (trades.length === 0) { container.innerHTML = '<div class="text-gray-500 py-4 text-sm text-center">目前沒有覆盤紀錄</div>'; return; }
             container.innerHTML = trades.map(t => {
                 let imgsHtml = '';
-                if(t.tvUrl1 && t.tvUrl1 !== '-') imgsHtml += `<a href="${t.tvUrl1}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖1(大時框)</a>`;
-                if(t.tvUrl2 && t.tvUrl2 !== '-') imgsHtml += `<a href="${t.tvUrl2}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖2(中時框)</a>`;
-                if(t.tvUrl3 && t.tvUrl3 !== '-') imgsHtml += `<a href="${t.tvUrl3}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖3(小時框)</a>`;
-                if(t.tvUrl4 && t.tvUrl4 !== '-') imgsHtml += `<a href="${t.tvUrl4}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖4(出場)</a>`;
+                if(t.tvUrl1 && t.tvUrl1 !== '-') imgsHtml += `<a href="${t.tvUrl1}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖1(大)</a>`;
+                if(t.tvUrl2 && t.tvUrl2 !== '-') imgsHtml += `<a href="${t.tvUrl2}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖2(中)</a>`;
+                if(t.tvUrl3 && t.tvUrl3 !== '-') imgsHtml += `<a href="${t.tvUrl3}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖3(小)</a>`;
+                if(t.tvUrl4 && t.tvUrl4 !== '-') imgsHtml += `<a href="${t.tvUrl4}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖4(出)</a>`;
                 if(!imgsHtml) imgsHtml = '<span class="text-gray-600">無圖表紀錄</span>';
 
                 return `
@@ -219,9 +289,10 @@
                             <span class="text-lg font-bold text-white">${t.symbol}</span> 
                             <span class="text-xs px-2 py-0.5 ml-2 rounded font-bold ${t.side==='Long'?'bg-emerald-500/20 text-emerald-400':'bg-rose-500/20 text-rose-400'}">${t.side} ${t.leverage}x</span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
                             <span class="text-lg font-bold ${t.pnl>=0?'text-emerald-400':'text-rose-500'}">${t.pnl >= 0 ? '+' : ''}${t.pnl} USDT</span>
-                            <button onclick="deleteTrade(${t.id})" class="text-gray-600 hover:text-rose-400 text-sm cursor-pointer">❌</button>
+                            <button onclick="startEdit(${t.id})" class="bg-gray-800 hover:bg-amber-500/20 text-gray-400 hover:text-amber-400 text-xs px-2 py-1 rounded border border-gray-700 cursor-pointer ml-2"><i class="fa-solid fa-pen-to-square"></i> 編輯</button>
+                            <button onclick="deleteTrade(${t.id})" class="text-gray-600 hover:text-rose-400 text-sm cursor-pointer ml-1">❌</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-4 gap-2 bg-gray-950 p-2.5 rounded text-xs text-gray-300">
