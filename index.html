@@ -16,7 +16,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-gray-800 pb-4 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極多功能版</h1>
-                <p class="text-sm text-gray-400">支援雙TP、雙平倉紀錄、6時框圖片、跨裝置智慧同步修改</p>
+                <p class="text-sm text-gray-400">支援分批 TP1/TP2、雙平倉點、6時框圖片、雲端完全同步刪除功能</p>
             </div>
             <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 text-xs w-full sm:w-auto">
                 <div class="font-bold text-indigo-400 mb-1"><i class="fa-solid fa-gear mr-1"></i>雲端同步設定</div>
@@ -67,7 +67,7 @@
                     <div><label class="text-gray-400">開單基本理由</label><input type="text" id="reason" class="w-full bg-gray-800 rounded p-2" placeholder="例如：日線級別支撐趨勢線破位" required></div>
                     
                     <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 space-y-2">
-                        <div class="text-xs font-bold text-indigo-400"><i class="fa-solid fa-images mr-1"></i>TradingView 多時框圖片連結 (新增至6張)</div>
+                        <div class="text-xs font-bold text-indigo-400"><i class="fa-solid fa-images mr-1"></i>TradingView 多時框圖片連結 (共6張)</div>
                         <input type="url" id="tvUrl0" placeholder="圖 0：超大時框趨勢 (如 天線/週線)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
                         <input type="url" id="tvUrl1" placeholder="圖 1：大時框趨勢 (如 4H)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
                         <input type="url" id="tvUrl2" placeholder="圖 2：中時框結構 (如 1H)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
@@ -142,7 +142,6 @@
                 tvUrl3: document.getElementById('tvUrl3').value || '-',
                 tvUrl4: document.getElementById('tvUrl4').value || '-',
                 notes: document.getElementById('notes').value || '-',
-                // 擴充增量數據
                 tp2: document.getElementById('tp2').value || '-',
                 tvUrl0: document.getElementById('tvUrl0').value || '-',
                 tvUrl5: document.getElementById('tvUrl5').value || '-',
@@ -215,7 +214,6 @@
             document.getElementById('tvUrl3').value = t.tvUrl3 === '-' ? '' : t.tvUrl3;
             document.getElementById('tvUrl4').value = t.tvUrl4 === '-' ? '' : t.tvUrl4;
             document.getElementById('notes').value = t.notes === '-' ? '' : t.notes;
-            // 增量賦值
             document.getElementById('tp2').value = t.tp2 === '-' ? '' : t.tp2;
             document.getElementById('tvUrl0').value = t.tvUrl0 === '-' ? '' : t.tvUrl0;
             document.getElementById('tvUrl5').value = t.tvUrl5 === '-' ? '' : t.tvUrl5;
@@ -262,8 +260,36 @@
             renderStats(); 
             renderTrades(); 
         }
-        function deleteTrade(id) { if(confirm('確定刪除？(請記得去雲端試算表手動刪除該列喔)')) { trades = trades.filter(t => t.id !== id); saveAndRender(); } }
-        function clearAllData() { if(confirm('確定清空本地紀錄？')) { trades = []; saveAndRender(); } }
+
+        // 🌟 修改後的二次確認 + 雲端同步刪除函數
+        async function deleteTrade(id, symbol) { 
+            const firstConfirm = confirm(`確定要刪除 [${symbol}] 這筆交易紀錄嗎？\n(注意：此操作會同步刪除雲端試算表資料)`);
+            if (firstConfirm) {
+                const secondConfirm = confirm(`⚠️ 警告：這將會【永久刪除】雲端和本地的所有備份，無法復原！\n您真的確定要刪除嗎？`);
+                if (secondConfirm) {
+                    const apiUrl = localStorage.getItem('crypto_sheet_api_url');
+                    const targetTrade = trades.find(t => t.id === id);
+                    
+                    // 先將前端畫面移除，讓使用者體感變快
+                    trades = trades.filter(t => t.id !== id); 
+                    saveAndRender();
+
+                    if(apiUrl && targetTrade) {
+                        try {
+                            // 發送請求通知 Google 試算表刪除
+                            await fetch(apiUrl, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'delete', data: { id: id } })
+                            });
+                        } catch(err) { console.error('雲端刪除失敗:', err); }
+                    }
+                }
+            }
+        }
+        
+        function clearAllData() { if(confirm('確定清空本地快取？(此操作不會影響雲端資料)')) { trades = []; saveAndRender(); } }
         
         function renderStats() {
             const total = trades.length; document.getElementById('stat-total').innerText = total;
@@ -301,7 +327,7 @@
                         <div class="flex items-center gap-2">
                             <span class="text-lg font-bold ${t.pnl>=0?'text-emerald-400':'text-rose-500'}">${t.pnl >= 0 ? '+' : ''}${t.pnl} USDT</span>
                             <button onclick="startEdit(${t.id})" class="bg-gray-800 hover:bg-amber-500/20 text-gray-400 hover:text-amber-400 text-xs px-2 py-1 rounded border border-gray-700 cursor-pointer ml-2"><i class="fa-solid fa-pen-to-square"></i> 編輯</button>
-                            <button onclick="deleteTrade(${t.id})" class="text-gray-600 hover:text-rose-400 text-sm cursor-pointer ml-1">❌</button>
+                            <button onclick="deleteTrade(${t.id}, '${t.symbol}')" class="text-gray-600 hover:text-rose-400 text-sm cursor-pointer ml-1">❌</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-gray-950 p-2.5 rounded text-xs text-gray-300">
