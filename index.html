@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crypto Journal - 智能覆盤編輯版</title>
+    <title>Crypto Journal - 終極多時框旗艦版</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -15,8 +15,8 @@
     <div class="max-w-7xl mx-auto pb-12">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-gray-800 pb-4 gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極同步版</h1>
-                <p class="text-sm text-gray-400">支援 4 時框圖片、歷史紀錄隨時編輯更新、手機/電腦同步</p>
+                <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極多功能版</h1>
+                <p class="text-sm text-gray-400">支援雙TP、雙平倉紀錄、6時框圖片、跨裝置智慧同步修改</p>
             </div>
             <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 text-xs w-full sm:w-auto">
                 <div class="font-bold text-indigo-400 mb-1"><i class="fa-solid fa-gear mr-1"></i>雲端同步設定</div>
@@ -46,28 +46,34 @@
                         <div><label class="text-gray-400">交易對</label><input type="text" id="symbol" class="w-full bg-gray-800 rounded p-2 uppercase" required></div>
                         <div><label class="text-gray-400">方向/槓桿</label><div class="flex gap-1"><select id="side" class="w-1/2 bg-gray-800 rounded p-2"><option value="Long">做多</option><option value="Short">做空</option></select><input type="number" id="leverage" class="w-1/2 bg-gray-800 rounded p-2" required></div></div>
                     </div>
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-2 gap-2">
                         <div><label class="text-gray-400">進場點</label><input type="number" step="any" id="entry" class="w-full bg-gray-800 rounded p-2" required></div>
-                        <div><label class="text-gray-400">初始止盈</label><input type="number" step="any" id="tp" class="w-full bg-gray-800 rounded p-2"></div>
-                        <div><label class="text-gray-400">初始止損</label><input type="number" step="any" id="sl" class="w-full bg-gray-800 rounded p-2"></div>
+                        <div><label class="text-gray-400">SL (止損)</label><input type="number" step="any" id="sl" class="w-full bg-gray-800 rounded p-2" required></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 bg-gray-950 p-2 rounded-lg border border-gray-800">
+                        <div><label class="text-amber-500 text-xs font-bold">TP 1</label><input type="number" step="any" id="tp" class="w-full bg-gray-800 rounded p-2 text-xs"></div>
+                        <div><label class="text-amber-500 text-xs font-bold">TP 2 (選填)</label><input type="number" step="any" id="tp2" class="w-full bg-gray-800 rounded p-2 text-xs"></div>
                     </div>
                     <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 space-y-2">
                         <div class="text-xs font-bold text-amber-500">動態調整紀錄</div>
                         <input type="text" id="mod1" placeholder="第一次調整 (新TP/SL)" class="w-full bg-gray-800 rounded p-1.5 text-xs"><input type="text" id="reason1" placeholder="調整原因" class="w-full bg-gray-800 rounded p-1.5 text-xs">
                         <input type="text" id="mod2" placeholder="第二次調整 (新TP/SL)" class="w-full bg-gray-800 rounded p-1.5 text-xs"><input type="text" id="reason2" placeholder="調整原因" class="w-full bg-gray-800 rounded p-1.5 text-xs">
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div><label class="text-gray-400">實際出場點</label><input type="number" step="any" id="exit" class="w-full bg-gray-800 rounded p-2"></div>
-                        <div><label class="text-gray-400">實際盈虧(USDT)</label><input type="number" step="any" id="pnl" class="w-full bg-gray-800 rounded p-2" required></div>
+                    <div class="grid grid-cols-2 gap-2 bg-gray-950 p-2 rounded-lg border border-gray-800">
+                        <div><label class="text-gray-400 text-xs">實際平倉點 1</label><input type="number" step="any" id="exit" class="w-full bg-gray-800 rounded p-2 text-xs"></div>
+                        <div><label class="text-gray-400 text-xs">實際平倉點 2</label><input type="number" step="any" id="exit2" class="w-full bg-gray-800 rounded p-2 text-xs"></div>
                     </div>
+                    <div><label class="text-gray-400">實際總盈虧(USDT)</label><input type="number" step="any" id="pnl" class="w-full bg-gray-800 rounded p-2" required></div>
                     <div><label class="text-gray-400">開單基本理由</label><input type="text" id="reason" class="w-full bg-gray-800 rounded p-2" placeholder="例如：日線級別支撐趨勢線破位" required></div>
                     
                     <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 space-y-2">
-                        <div class="text-xs font-bold text-indigo-400"><i class="fa-solid fa-images mr-1"></i>TradingView 多時框圖片連結</div>
-                        <input type="url" id="tvUrl1" placeholder="圖 1：大時框趨勢 (如 日線/4H)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <div class="text-xs font-bold text-indigo-400"><i class="fa-solid fa-images mr-1"></i>TradingView 多時框圖片連結 (新增至6張)</div>
+                        <input type="url" id="tvUrl0" placeholder="圖 0：超大時框趨勢 (如 天線/週線)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <input type="url" id="tvUrl1" placeholder="圖 1：大時框趨勢 (如 4H)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
                         <input type="url" id="tvUrl2" placeholder="圖 2：中時框結構 (如 1H)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
                         <input type="url" id="tvUrl3" placeholder="圖 3：小時框進場點 (如 15M/5M)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
-                        <input type="url" id="tvUrl4" placeholder="圖 4：平倉/出場截圖 (選填)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <input type="url" id="tvUrl4" placeholder="圖 4：平倉/出場截圖 1 (選填)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
+                        <input type="url" id="tvUrl5" placeholder="圖 5：平倉/出場截圖 2 (選填)" class="w-full bg-gray-800 rounded p-1.5 text-xs">
                     </div>
 
                     <div>
@@ -135,7 +141,12 @@
                 tvUrl2: document.getElementById('tvUrl2').value || '-',
                 tvUrl3: document.getElementById('tvUrl3').value || '-',
                 tvUrl4: document.getElementById('tvUrl4').value || '-',
-                notes: document.getElementById('notes').value || '-'
+                notes: document.getElementById('notes').value || '-',
+                // 擴充增量數據
+                tp2: document.getElementById('tp2').value || '-',
+                tvUrl0: document.getElementById('tvUrl0').value || '-',
+                tvUrl5: document.getElementById('tvUrl5').value || '-',
+                exit2: document.getElementById('exit2').value || '-'
             };
 
             const apiUrl = localStorage.getItem('crypto_sheet_api_url');
@@ -204,6 +215,11 @@
             document.getElementById('tvUrl3').value = t.tvUrl3 === '-' ? '' : t.tvUrl3;
             document.getElementById('tvUrl4').value = t.tvUrl4 === '-' ? '' : t.tvUrl4;
             document.getElementById('notes').value = t.notes === '-' ? '' : t.notes;
+            // 增量賦值
+            document.getElementById('tp2').value = t.tp2 === '-' ? '' : t.tp2;
+            document.getElementById('tvUrl0').value = t.tvUrl0 === '-' ? '' : t.tvUrl0;
+            document.getElementById('tvUrl5').value = t.tvUrl5 === '-' ? '' : t.tvUrl5;
+            document.getElementById('exit2').value = t.exit2 === '-' ? '' : t.exit2;
 
             document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-user-pen mr-2"></i>修改交易覆盤中';
             document.getElementById('form-title').className = "text-base font-bold text-amber-400 mb-3 flex items-center";
@@ -238,9 +254,7 @@
                     trades = cloudData.reverse(); 
                     saveAndRender();
                 }
-            } catch(err) {
-                renderTrades();
-            }
+            } catch(err) { renderTrades(); }
         }
 
         function saveAndRender() { 
@@ -248,14 +262,7 @@
             renderStats(); 
             renderTrades(); 
         }
-        
-        function deleteTrade(id) { 
-            if(confirm('確定刪除？(請記得同步至雲端試算表手動刪除該列喔)')) { 
-                trades = trades.filter(t => t.id !== id); 
-                saveAndRender(); 
-            } 
-        }
-        
+        function deleteTrade(id) { if(confirm('確定刪除？(請記得去雲端試算表手動刪除該列喔)')) { trades = trades.filter(t => t.id !== id); saveAndRender(); } }
         function clearAllData() { if(confirm('確定清空本地紀錄？')) { trades = []; saveAndRender(); } }
         
         function renderStats() {
@@ -276,10 +283,12 @@
             if (trades.length === 0) { container.innerHTML = '<div class="text-gray-500 py-4 text-sm text-center">目前沒有覆盤紀錄</div>'; return; }
             container.innerHTML = trades.map(t => {
                 let imgsHtml = '';
+                if(t.tvUrl0 && t.tvUrl0 !== '-') imgsHtml += `<a href="${t.tvUrl0}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖0(超大)</a>`;
                 if(t.tvUrl1 && t.tvUrl1 !== '-') imgsHtml += `<a href="${t.tvUrl1}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖1(大)</a>`;
                 if(t.tvUrl2 && t.tvUrl2 !== '-') imgsHtml += `<a href="${t.tvUrl2}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖2(中)</a>`;
                 if(t.tvUrl3 && t.tvUrl3 !== '-') imgsHtml += `<a href="${t.tvUrl3}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖3(小)</a>`;
-                if(t.tvUrl4 && t.tvUrl4 !== '-') imgsHtml += `<a href="${t.tvUrl4}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖4(出)</a>`;
+                if(t.tvUrl4 && t.tvUrl4 !== '-') imgsHtml += `<a href="${t.tvUrl4}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖4(出1)</a>`;
+                if(t.tvUrl5 && t.tvUrl5 !== '-') imgsHtml += `<a href="${t.tvUrl5}" target="_blank" class="bg-indigo-950/40 text-indigo-400 border border-indigo-900/50 px-2 py-1 rounded text-center hover:bg-indigo-900/50"><i class="fa-solid fa-image mr-1"></i>圖5(出2)</a>`;
                 if(!imgsHtml) imgsHtml = '<span class="text-gray-600">無圖表紀錄</span>';
 
                 return `
@@ -295,11 +304,13 @@
                             <button onclick="deleteTrade(${t.id})" class="text-gray-600 hover:text-rose-400 text-sm cursor-pointer ml-1">❌</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-950 p-2.5 rounded text-xs text-gray-300">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-gray-950 p-2.5 rounded text-xs text-gray-300">
                         <div>進場: <span class="text-white">${t.entry}</span></div>
-                        <div>出場: <span class="text-white">${t.exit}</span></div>
-                        <div>止盈: <span class="text-emerald-500">${t.tp}</span></div>
-                        <div>止損: <span class="text-rose-500">${t.sl}</span></div>
+                        <div>TP1: <span class="text-emerald-400">${t.tp}</span></div>
+                        <div>TP2: <span class="text-emerald-500">${t.tp2}</span></div>
+                        <div>止損SL: <span class="text-rose-500">${t.sl}</span></div>
+                        <div>出場1: <span class="text-white">${t.exit}</span></div>
+                        <div>出場2: <span class="text-white">${t.exit2}</span></div>
                     </div>
                     ${(t.mod1!=='-'||t.mod2!=='-')?`
                     <div class="bg-gray-950/70 p-2.5 rounded text-xs text-amber-400 space-y-1 border border-amber-950/30">
@@ -310,8 +321,8 @@
                         <span class="text-gray-500 font-bold">開單理由：</span>${t.reason}
                     </div>
                     <div class="pt-1">
-                        <div class="text-gray-500 font-bold text-xs mb-1.5">結構圖表 (多時框)：</div>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div class="text-gray-500 font-bold text-xs mb-1.5">結構圖表 (天~5M多時框)：</div>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
                             ${imgsHtml}
                         </div>
                     </div>
