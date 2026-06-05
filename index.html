@@ -16,7 +16,7 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-gray-800 pb-4 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極多功能版</h1>
-                <p class="text-sm text-gray-400">支援分批 TP1/TP2、雙平倉點、6時框圖片、雲端完全同步刪除功能</p>
+                <p class="text-sm text-gray-400">支援分批 TP1/TP2、雙平倉點、6時框圖片、網頁與雲端完全同步刪除</p>
             </div>
             <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 text-xs w-full sm:w-auto">
                 <div class="font-bold text-indigo-400 mb-1"><i class="fa-solid fa-gear mr-1"></i>雲端同步設定</div>
@@ -90,7 +90,7 @@
             <div class="lg:col-span-2 space-y-4">
                 <h2 class="text-lg font-bold text-indigo-400 flex justify-between items-center border-b border-gray-800 pb-2">
                     <span>歷史交易覆盤清單</span>
-                    <button onclick="clearAllData()" class="text-xs text-rose-400 cursor-pointer">清空本地</button>
+                    <button onclick="clearAllData()" class="text-xs text-rose-400 cursor-pointer">清空本地快取</button>
                 </h2>
                 <div id="trades-container" class="space-y-4"></div>
             </div>
@@ -261,35 +261,35 @@
             renderTrades(); 
         }
 
-        // 🌟 修改後的二次確認 + 雲端同步刪除函數
+        // 🌟 核心修改：網頁點擊❌後，觸發二次防觸窗，並同步發送雲端刪除指令
         async function deleteTrade(id, symbol) { 
-            const firstConfirm = confirm(`確定要刪除 [${symbol}] 這筆交易紀錄嗎？\n(注意：此操作會同步刪除雲端試算表資料)`);
+            const firstConfirm = confirm(`確定要刪除 [${symbol}] 這筆交易紀錄嗎？\n(注意：此操作會連同雲端試算表資料同步刪除)`);
             if (firstConfirm) {
-                const secondConfirm = confirm(`⚠️ 警告：這將會【永久刪除】雲端和本地的所有備份，無法復原！\n您真的確定要刪除嗎？`);
+                const secondConfirm = confirm(`⚠️ 警告：這將會【永久刪除】雲端和本地的所有數據，無法復原！\n您真的確定要刪除嗎？`);
                 if (secondConfirm) {
                     const apiUrl = localStorage.getItem('crypto_sheet_api_url');
                     const targetTrade = trades.find(t => t.id === id);
                     
-                    // 先將前端畫面移除，讓使用者體感變快
+                    // 1. 先從網頁畫面和本地快取中立刻移除該筆紀錄
                     trades = trades.filter(t => t.id !== id); 
                     saveAndRender();
 
+                    // 2. 自動在背景通知 Google Apps Script 刪除試算表對應資料
                     if(apiUrl && targetTrade) {
                         try {
-                            // 發送請求通知 Google 試算表刪除
                             await fetch(apiUrl, {
                                 method: 'POST',
                                 mode: 'no-cors',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ action: 'delete', data: { id: id } })
                             });
-                        } catch(err) { console.error('雲端刪除失敗:', err); }
+                        } catch(err) { console.error('背景同步雲端刪除失敗:', err); }
                     }
                 }
             }
         }
         
-        function clearAllData() { if(confirm('確定清空本地快取？(此操作不會影響雲端資料)')) { trades = []; saveAndRender(); } }
+        function clearAllData() { if(confirm('確定清空本地網頁快取？(此操作不會影響雲端試算表資料)')) { trades = []; saveAndRender(); } }
         
         function renderStats() {
             const total = trades.length; document.getElementById('stat-total').innerText = total;
