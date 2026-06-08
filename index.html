@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crypto Journal - 終極多時框旗艦版</title>
+    <title>Crypto Journal - 覆盤系統</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body { background-color: #0b0f19; color: #f8fafc; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
         html { overflow-y: auto !important; height: auto !important; }
+        /* 讓心得輸入框的手動縮放更美觀，並設定最小高度 */
+        .auto-textarea { min-height: 120px; resize: vertical; }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
     <div class="max-w-7xl mx-auto pb-12">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-gray-800 pb-4 gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 終極多功能版</h1>
+                <h1 class="text-2xl font-bold text-indigo-400"><i class="fa-solid fa-layer-group mr-2"></i>Crypto Journal 智能多時框覆盤系統</h1>
                 <p class="text-sm text-gray-400">支援分批 TP1/TP2、雙平倉點、6時框圖片、網頁與雲端完全同步刪除</p>
             </div>
             <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 text-xs w-full sm:w-auto">
@@ -78,7 +80,7 @@
 
                     <div>
                         <label class="text-gray-400 font-bold block mb-1 text-indigo-400"><i class="fa-solid fa-pen-to-square mr-1"></i>詳細覆盤心得與檢討</label>
-                        <textarea id="notes" rows="4" class="w-full bg-gray-800 rounded p-2 text-sm focus:outline-none focus:border-indigo-500" placeholder="打下你對這筆單的詳細覆盤筆記..."></textarea>
+                        <textarea id="notes" class="w-full bg-gray-800 rounded p-2 text-sm focus:outline-none focus:border-indigo-500 auto-textarea" placeholder="打下你對這筆單的詳細覆盤筆記...（支援自動伸展高度，打再多字都不怕）" oninput="autoGrow(this)"></textarea>
                     </div>
 
                     <div class="flex gap-2">
@@ -101,6 +103,12 @@
         let trades = JSON.parse(localStorage.getItem('crypto_journal_trades')) || [];
         let isEditing = false;
         
+        // 🌟 新增：輸入文字時讓輸入框高度自動延伸的函式
+        function autoGrow(element) {
+            element.style.height = "5px";
+            element.style.height = (element.scrollHeight) + "px";
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const savedUrl = localStorage.getItem('crypto_sheet_api_url');
             if(savedUrl) {
@@ -188,6 +196,8 @@
             btn.disabled = false;
             saveAndRender();
             e.target.reset();
+            // 重設輸入框高度
+            document.getElementById('notes').style.height = '120px';
         });
 
         function startEdit(id) {
@@ -213,7 +223,10 @@
             document.getElementById('tvUrl2').value = t.tvUrl2 === '-' ? '' : t.tvUrl2;
             document.getElementById('tvUrl3').value = t.tvUrl3 === '-' ? '' : t.tvUrl3;
             document.getElementById('tvUrl4').value = t.tvUrl4 === '-' ? '' : t.tvUrl4;
-            document.getElementById('notes').value = t.notes === '-' ? '' : t.notes;
+            
+            const notesField = document.getElementById('notes');
+            notesField.value = t.notes === '-' ? '' : t.notes;
+            
             document.getElementById('tp2').value = t.tp2 === '-' ? '' : t.tp2;
             document.getElementById('tvUrl0').value = t.tvUrl0 === '-' ? '' : t.tvUrl0;
             document.getElementById('tvUrl5').value = t.tvUrl5 === '-' ? '' : t.tvUrl5;
@@ -224,6 +237,9 @@
             document.getElementById('submit-btn').innerText = '確認修改此單';
             document.getElementById('submit-btn').className = "w-2/3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded cursor-pointer";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            
+            // 編輯時自動調整心得框的高度以適應原本內容
+            autoGrow(notesField);
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -237,6 +253,7 @@
             document.getElementById('submit-btn').innerText = '儲存覆盤紀錄';
             document.getElementById('submit-btn').className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded cursor-pointer";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
+            document.getElementById('notes').style.height = '120px';
         }
 
         async function syncFromCloud() {
@@ -261,7 +278,6 @@
             renderTrades(); 
         }
 
-        // 🌟 核心修改：網頁點擊❌後，觸發二次防觸窗，並同步發送雲端刪除指令
         async function deleteTrade(id, symbol) { 
             const firstConfirm = confirm(`確定要刪除 [${symbol}] 這筆交易紀錄嗎？\n(注意：此操作會連同雲端試算表資料同步刪除)`);
             if (firstConfirm) {
@@ -270,11 +286,9 @@
                     const apiUrl = localStorage.getItem('crypto_sheet_api_url');
                     const targetTrade = trades.find(t => t.id === id);
                     
-                    // 1. 先從網頁畫面和本地快取中立刻移除該筆紀錄
                     trades = trades.filter(t => t.id !== id); 
                     saveAndRender();
 
-                    // 2. 自動在背景通知 Google Apps Script 刪除試算表對應資料
                     if(apiUrl && targetTrade) {
                         try {
                             await fetch(apiUrl, {
